@@ -25,7 +25,7 @@
     <section id="screen-question" class="screen visible">
       <div class="card">
         <h2>ما حاجتك؟</h2>
-        <p class="muted">أضمر حاجتك في نفسك، واكتبها إن شئت (لا تُحفظ ولا تُرسل لأي مكان).</p>
+        <p class="muted">أضمر حاجتك في نفسك، واكتبها إن شئت — يبقى سؤالك على جهازك فقط ولا يُرسل لأي مكان.</p>
         <textarea id="question" placeholder="مثال: هل أسافر هذا الشهر لطلب الرزق؟"></textarea>
         <h3 style="margin-top:14px">نوع السؤال</h3>
         <p class="muted">يحدد نوع السؤال البيت الذي يُنظر فيه من التخت.</p>
@@ -72,7 +72,21 @@
         <p class="muted">البيوت الستة عشر — اضغط على أي بيت لقراءة معناه. البيت المظلّل هو بيت سؤالك.</p>
         <div class="takht" id="takht"></div>
       </div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="btn-share">↗ شارك النتيجة</button>
+      </div>
       <button class="btn btn-primary" id="btn-new">خَطّ جديد</button>
+    </section>
+
+    <!-- سجل الخطات -->
+    <section id="screen-history" class="screen">
+      <div class="card">
+        <h2>سجلّ خطّاتك</h2>
+        <p class="muted">يُحفظ السجل على جهازك فقط. اضغط على أي خطّة لإعادة فتح تختها كاملاً.</p>
+        <p id="history-empty" class="muted" style="text-align:center;padding:20px 0">لا خطّات بعد — ابدأ خطّك الأول.</p>
+        <div id="history-list"></div>
+        <button class="btn btn-ghost" id="btn-clear-history" style="display:none;margin-top:10px">🗑 مسح السجل</button>
+      </div>
     </section>
 
     <!-- موسوعة الأشكال -->
@@ -118,6 +132,7 @@
 
   <nav class="tabs">
     <button data-tab="cast" class="active"><span class="ticon">〰️</span>الخَطّ</button>
+    <button data-tab="history"><span class="ticon">🗂️</span>السجل</button>
     <button data-tab="learn"><span class="ticon">📖</span>الأشكال</button>
     <button data-tab="about"><span class="ticon">🕌</span>عن العلم</button>
   </nav>

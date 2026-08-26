@@ -6,6 +6,20 @@
 
   const { FIGURES, FIGURE_LIST, HOUSES, QUESTION_TYPES, QUALITY_PHRASES } = RAMAL_DATA;
 
+  /* تخزين محلي آمن (قد يكون معطلاً في بعض المتصفحات) */
+  const store = {
+    get(key, fallback) {
+      try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
+    },
+    set(key, val) {
+      try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* لا شيء */ }
+    },
+  };
+
+  function vibrate(ms) {
+    try { if (navigator.vibrate) navigator.vibrate(ms); } catch { /* لا شيء */ }
+  }
+
   /* ---------------- أدوات عامة ---------------- */
   const $ = (sel) => document.querySelector(sel);
   const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
@@ -55,6 +69,7 @@
     draw: $('#screen-draw'),
     result: $('#screen-result'),
     learn: $('#screen-learn'),
+    history: $('#screen-history'),
     about: $('#screen-about'),
   };
 
@@ -101,6 +116,9 @@
   let sandReady = false;
   let stroke = null; // {lastX, lastY, dashes}
 
+  /* خلفية الرمل تُرسم مرة واحدة في ذاكرة منفصلة ثم تُنسخ — مسحٌ فوري بلا إعادة حساب */
+  let sandCache = null;
+
   function sizeCanvas() {
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth;
@@ -109,23 +127,35 @@
     canvas.width = Math.round(w * dpr);
     canvas.height = Math.round(h * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildSandCache(w, h, dpr);
     paintSand();
   }
 
-  function paintSand() {
-    const w = canvas.clientWidth, h = canvas.clientHeight;
-    const g = ctx.createLinearGradient(0, 0, 0, h);
+  function buildSandCache(w, h, dpr) {
+    sandCache = document.createElement('canvas');
+    sandCache.width = Math.round(w * dpr);
+    sandCache.height = Math.round(h * dpr);
+    const c = sandCache.getContext('2d');
+    c.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const g = c.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, '#e8d5ae');
     g.addColorStop(1, '#d3ba86');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
+    c.fillStyle = g;
+    c.fillRect(0, 0, w, h);
     /* حبيبات الرمل */
     for (let i = 0; i < w * h / 28; i++) {
       const x = Math.random() * w, y = Math.random() * h;
-      const shade = Math.random();
-      ctx.fillStyle = shade < 0.5 ? 'rgba(120,90,40,0.13)' : 'rgba(255,245,220,0.18)';
-      ctx.fillRect(x, y, 1.4, 1.4);
+      c.fillStyle = Math.random() < 0.5 ? 'rgba(120,90,40,0.13)' : 'rgba(255,245,220,0.18)';
+      c.fillRect(x, y, 1.4, 1.4);
     }
+  }
+
+  function paintSand() {
+    if (!sandCache) return;
+    ctx.save();
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(sandCache, 0, 0);
+    ctx.restore();
   }
 
   function stampDash(x, y) {
@@ -166,6 +196,7 @@
     const p = pointerPos(e);
     stroke = { lastX: p.x, lastY: p.y, dashes: 1 };
     stampDash(p.x, p.y);
+    vibrate(8);
     hint.style.display = 'none';
     e.preventDefault();
   }
@@ -176,6 +207,7 @@
     const dx = p.x - stroke.lastX, dy = p.y - stroke.lastY;
     if (Math.hypot(dx, dy) >= 15) {
       stampDash(p.x, p.y);
+      vibrate(5);
       stroke.dashes++;
       stroke.lastX = p.x;
       stroke.lastY = p.y;
@@ -284,10 +316,94 @@
   $('#btn-cast').addEventListener('click', () => {
     const parities = state.lines.map((l) => l.parity);
     state.takht = RAMAL.buildTakht(parities);
-    state.verdict = RAMAL.verdict(state.takht, state.selectedType.house);
+    state.verdict = RAMAL.verdict(state.takht, state.selectedType.house, state.selectedType.id);
     state.stage = 'result';
+    saveToHistory(parities);
     renderResult();
     show('result');
+    vibrate([20, 40, 20]);
+  });
+
+  /* ---------------- سجل الخطات (يبقى على جهازك فقط) ---------------- */
+  const HISTORY_KEY = 'khat-history';
+
+  function saveToHistory(parities) {
+    const list = store.get(HISTORY_KEY, []);
+    list.unshift({
+      at: Date.now(),
+      question: $('#question').value.trim(),
+      typeId: state.selectedType.id,
+      lines: parities,
+      judge: state.takht.judge.name,
+      title: state.verdict.level.title,
+      icon: state.verdict.level.icon,
+      favorability: state.verdict.favorability,
+    });
+    store.set(HISTORY_KEY, list.slice(0, 50));
+    renderHistory();
+  }
+
+  function renderHistory() {
+    const wrap = $('#history-list');
+    if (!wrap) return;
+    const list = store.get(HISTORY_KEY, []);
+    wrap.innerHTML = '';
+    $('#history-empty').style.display = list.length ? 'none' : 'block';
+    $('#btn-clear-history').style.display = list.length ? 'inline-block' : 'none';
+    list.forEach((entry, i) => {
+      const li = document.createElement('button');
+      li.className = 'history-item';
+      const qt = QUESTION_TYPES.find((t) => t.id === entry.typeId) || QUESTION_TYPES[0];
+      const when = new Date(entry.at).toLocaleDateString('ar', {
+        day: 'numeric', month: 'long', hour: 'numeric', minute: 'numeric',
+      });
+      li.innerHTML =
+        '<div class="hi-top"><span>' + entry.icon + ' ' + entry.title + '</span>' +
+        '<span class="hi-fav">' + arNum(entry.favorability) + '٪</span></div>' +
+        '<div class="hi-mid">' + qt.icon + ' ' + qt.label +
+        (entry.question ? ' — «' + entry.question + '»' : '') + '</div>' +
+        '<div class="hi-sub muted">الميزان: ' + entry.judge + ' · ' + when + '</div>';
+      li.addEventListener('click', () => reopenEntry(entry));
+      wrap.appendChild(li);
+    });
+  }
+
+  function reopenEntry(entry) {
+    state.selectedType = QUESTION_TYPES.find((t) => t.id === entry.typeId) || QUESTION_TYPES[0];
+    $('#question').value = entry.question || '';
+    state.lines = entry.lines.map((parity) => ({ parity, count: parity }));
+    state.takht = RAMAL.buildTakht(entry.lines);
+    state.verdict = RAMAL.verdict(state.takht, state.selectedType.house, state.selectedType.id);
+    state.stage = 'result';
+    renderResult();
+    document.querySelectorAll('nav.tabs button').forEach((b) => b.classList.remove('active'));
+    document.querySelector('nav.tabs button[data-tab="cast"]').classList.add('active');
+    show('result');
+  }
+
+  $('#btn-clear-history').addEventListener('click', () => {
+    store.set(HISTORY_KEY, []);
+    renderHistory();
+  });
+
+  /* ---------------- مشاركة النتيجة ---------------- */
+  $('#btn-share').addEventListener('click', async () => {
+    if (!state.verdict) return;
+    const v = state.verdict;
+    const text =
+      v.level.icon + ' ' + v.level.title + ' (' + arNum(v.favorability) + '٪)\n' +
+      'الميزان: «' + state.takht.judge.name + '» — ' + state.takht.judge.qualityText + '\n' +
+      (v.details.special ? v.details.special + '\n' : '') +
+      '— من تطبيق الخَطّ (علم الرمل)';
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'الخَطّ — علم الرمل', text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        $('#btn-share').textContent = '✓ نُسخت النتيجة';
+        setTimeout(() => { $('#btn-share').textContent = '↗ شارك النتيجة'; }, 1600);
+      }
+    } catch { /* أُلغيت المشاركة */ }
   });
 
   /* ---------------- شاشة النتيجة ---------------- */
@@ -303,12 +419,18 @@
       qp.textContent = '« ' + q + ' »';
       vc.appendChild(qp);
     }
+    const typeLine = document.createElement('div');
+    typeLine.className = 'muted';
+    typeLine.textContent = state.selectedType.icon + ' ' + state.selectedType.label;
     const icon = document.createElement('div');
     icon.className = 'verdict-icon';
     icon.textContent = v.level.icon;
     const title = document.createElement('div');
     title.className = 'verdict-title';
     title.textContent = v.level.title;
+    const fav = document.createElement('div');
+    fav.className = 'fav-line';
+    fav.textContent = 'نسبة صلاح الأمر: ' + arNum(v.favorability) + '٪';
     const text = document.createElement('p');
     text.textContent = v.level.text;
 
@@ -324,11 +446,21 @@
     labels.className = 'gauge-labels';
     labels.innerHTML = '<span>غير صالح</span><span>ممتزج</span><span>في صالحك</span>';
 
+    vc.appendChild(typeLine);
     vc.appendChild(icon);
     vc.appendChild(title);
+    vc.appendChild(fav);
     vc.appendChild(gauge);
     vc.appendChild(labels);
     vc.appendChild(text);
+
+    /* دلالة الميزان في باب هذا السؤال تحديداً */
+    if (v.details.special) {
+      const sp = document.createElement('div');
+      sp.className = 'special-box';
+      sp.textContent = '✦ ' + v.details.special;
+      vc.appendChild(sp);
+    }
 
     /* التفاصيل */
     const dl = $('#detail-list');
@@ -445,6 +577,7 @@
     state.takht = null;
     state.verdict = null;
     state.stage = 'question';
+    $('#question').value = '';
     renderRecord();
     show('question');
   });
@@ -483,4 +616,5 @@
   }
 
   renderRecord();
+  renderHistory();
 })();

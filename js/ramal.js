@@ -12,7 +12,7 @@
     root.RAMAL = factory(root.RAMAL_DATA);
   }
 })(typeof self !== 'undefined' ? self : this, function (data) {
-  const { FIGURES, HOUSES, VERDICT_LEVELS, QUALITY_PHRASES } = data;
+  const { FIGURES, HOUSES, VERDICT_LEVELS, QUALITY_PHRASES, SPECIAL_READINGS } = data;
 
   /* البحث عن الشكل من صفوفه */
   const BY_KEY = {};
@@ -88,7 +88,7 @@
    * الحكم النهائي: يجمع الميزان (الوزن الأكبر) والشاهدين والعاقبة
    * وشكل بيت السؤال والأم الأولى (حال السائل).
    */
-  function verdict(takht, questionHouse) {
+  function verdict(takht, questionHouse, questionTypeId) {
     const houseFig = takht.houses[questionHouse - 1];
     const jq = effectiveJudgeQuality(takht);
     const w1 = takht.witnesses[0];
@@ -107,8 +107,14 @@
 
     const level = VERDICT_LEVELS.find((l) => score >= l.min) || VERDICT_LEVELS[VERDICT_LEVELS.length - 1];
 
+    /* الحكم الخاص: دلالة شكل الميزان في باب هذا السؤال تحديداً */
+    const special =
+      (questionTypeId && SPECIAL_READINGS[takht.judge.id] &&
+        SPECIAL_READINGS[takht.judge.id][questionTypeId]) || null;
+
     const houseInfo = HOUSES[questionHouse - 1];
     const details = {
+      special,
       beginning: `أول الأمر وباطنه (الشاهد الأيمن): «${w1.name}» — ${QUALITY_PHRASES[String(w1.quality)]}.`,
       ending: `آخر الأمر وظاهره (الشاهد الأيسر): «${w2.name}» — ${QUALITY_PHRASES[String(w2.quality)]}.`,
       judge: `الميزان (القاضي): «${takht.judge.name}» — ${takht.judge.asJudge}`,
@@ -117,7 +123,10 @@
       advice: takht.judge.advice,
     };
 
-    return { score, level, details, houseFig };
+    /* نسبة صلاح الأمر: من صفر إلى مئة */
+    const favorability = Math.round((score + 100) / 2);
+
+    return { score, favorability, level, details, houseFig };
   }
 
   return { figureFromRows, addFigures, buildTakht, verdict, effectiveJudgeQuality };

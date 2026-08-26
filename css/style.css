@@ -211,7 +211,16 @@ textarea#question:focus { outline: 2px solid var(--sand-3); }
   text-align: center;
   min-height: 118px;
 }
-.mother-slot.done { border-style: solid; border-color: var(--accent); background: #fdf5e4; }
+.mother-slot.done {
+  border-style: solid;
+  border-color: var(--accent);
+  background: #fdf5e4;
+  animation: motherdone 0.5s ease;
+}
+@keyframes motherdone {
+  0% { transform: scale(0.94); box-shadow: 0 0 0 4px rgba(160, 98, 45, 0.35); }
+  100% { transform: none; box-shadow: none; }
+}
 .mother-slot .mlabel { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 4px; }
 .mother-slot .mname { font-size: 0.9rem; color: var(--accent-deep); font-weight: bold; margin-top: 4px; }
 .dotrow { display: flex; justify-content: center; gap: 7px; height: 15px; align-items: center; }
@@ -256,6 +265,46 @@ textarea#question:focus { outline: 2px solid var(--sand-3); }
 }
 .detail-list li:last-child { border-bottom: none; }
 .detail-list .dlabel { color: var(--accent); font-weight: bold; }
+
+.fav-line { font-size: 1.1rem; color: var(--accent-deep); font-weight: bold; }
+
+.special-box {
+  background: #efe6f3;
+  border: 1px solid #cdb8d8;
+  border-right: 4px solid #7a5590;
+  color: #4a3358;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 12px;
+  font-size: 1.05rem;
+  text-align: right;
+}
+
+.history-item {
+  display: block;
+  width: 100%;
+  text-align: right;
+  font-family: inherit;
+  background: #fffdf7;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.history-item:hover { border-color: var(--accent); box-shadow: var(--shadow); }
+.history-item .hi-top {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: var(--accent-deep);
+  font-size: 1.05rem;
+}
+.history-item .hi-fav { color: var(--ink-soft); }
+.history-item .hi-mid { font-size: 0.98rem; margin: 2px 0; }
+.history-item .hi-sub { font-size: 0.85rem; }
 
 .advice-box {
   background: #f6e9cf;

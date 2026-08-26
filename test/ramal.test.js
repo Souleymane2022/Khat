@@ -1,5 +1,5 @@
 /* اختبارات محرك علم الرمل — تشغيل: node test/ramal.test.js */
-const { FIGURES, FIGURE_LIST } = require('../js/data.js');
+const { FIGURES, FIGURE_LIST, QUESTION_TYPES, SPECIAL_READINGS } = require('../js/data.js');
 const RAMAL = require('../js/ramal.js');
 
 let passed = 0;
@@ -70,7 +70,25 @@ for (let h = 1; h <= 16; h++) {
   assert(v.details.judge.includes(t.judge.name), 'judge name in details');
 }
 
-/* 6) مدخلات فاسدة تُرفض */
+/* 6) الأحكام الخاصة: كل مفتاح شكلٍ وكل مفتاح سؤالٍ صحيح، والنص غير فارغ */
+const qtypeIds = new Set(QUESTION_TYPES.map((q) => q.id));
+Object.entries(SPECIAL_READINGS).forEach(([figId, readings]) => {
+  assert(FIGURES[figId], 'special readings figure exists: ' + figId);
+  Object.entries(readings).forEach(([qid, txt]) => {
+    assert(qtypeIds.has(qid), 'valid question type ' + qid + ' for ' + figId);
+    assert(typeof txt === 'string' && txt.length > 10, 'non-empty reading for ' + figId + '/' + qid);
+  });
+});
+
+/* 7) الحكم مع نوع السؤال يعيد النسبة والقراءة الخاصة عند توفرها */
+QUESTION_TYPES.forEach((qt) => {
+  const v = RAMAL.verdict(t, qt.house, qt.id);
+  assert(v.favorability >= 0 && v.favorability <= 100, 'favorability in range for ' + qt.id);
+  const expected = (SPECIAL_READINGS[t.judge.id] || {})[qt.id] || null;
+  assert(v.details.special === expected, 'special reading matches for ' + qt.id);
+});
+
+/* 8) مدخلات فاسدة تُرفض */
 let threw = false;
 try { RAMAL.buildTakht([1, 2, 3]); } catch (e) { threw = true; }
 assert(threw, 'invalid input rejected');

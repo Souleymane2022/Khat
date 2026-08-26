@@ -1,5 +1,5 @@
 /* عامل خدمة بسيط: يجعل التطبيق يعمل دون اتصال بالإنترنت */
-const CACHE = 'khat-v1';
+const CACHE = 'khat-v2';
 const ASSETS = [
   './',
   './index.html',
