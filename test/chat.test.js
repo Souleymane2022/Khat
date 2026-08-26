@@ -174,4 +174,22 @@ const ctx2 = { takht: t, verdict: v, questionType: qt, now: NOW };
   ['سنّه', 'لونه', 'بنيته', 'علامته'].forEach((k) => assert(a.includes(k), 'person includes ' + k));
 }
 
+/* 8) حكمة الزمن: بيت سريع وميزان بطيء = «أسبابك حاضرة لكن...» */
+{
+  const fast = F.tariq, slow = F.uqla, mid = F.bayad;
+  assert(CHAT.timingIntro(fast, slow).includes('اسبابك حاضره'.slice(0, 0) + 'أسبابك حاضرة'), 'ready but delayed');
+  assert(CHAT.timingIntro(slow, fast).includes('أسرع مما يبدو'), 'sooner than it seems');
+  assert(CHAT.timingIntro(fast, fast).includes('عاجل'), 'urgent both ways');
+  assert(CHAT.timingIntro(slow, slow).includes('الصبر'), 'patience both ways');
+  assert(CHAT.timingIntro(mid, mid) === '', 'neutral when balanced');
+  /* والجواب الكامل يتضمنها عند اختلاف السرعتين */
+  const ctx3 = { takht: t, verdict: v, questionType: qt, now: NOW };
+  const hSpeed = FIGURE_GUIDANCE[v.houseFig.id].speed;
+  const jSpeed = FIGURE_GUIDANCE[t.judge.id].speed;
+  if (hSpeed !== jSpeed) {
+    assert(CHAT.answer('timing', ctx3).includes(CHAT.timingIntro(v.houseFig, t.judge).slice(0, 20)),
+      'timing answer carries the intro');
+  }
+}
+
 console.log('OK — ' + passed + ' assertions passed');

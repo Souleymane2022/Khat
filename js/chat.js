@@ -147,7 +147,8 @@
       case 'timing': {
         const tm = RAMAL.preciseTiming(takht, ctx.now);
         const unitPlural = tm.unitLabel === 'يوم' ? 'أيام' : (tm.unitLabel === 'أسبوع' ? 'أسابيع' : 'أشهر');
-        let out = 'عدد نقاط شكلك الحاكم يعطي الزمن: قرابة ' + toArabicDigits(tm.best) + ' ' + unitPlural +
+        let out = timingIntro(houseFig, judge);
+        out += 'عدد نقاط شكلك الحاكم يعطي الزمن: قرابة ' + toArabicDigits(tm.best) + ' ' + unitPlural +
           ' — ما بين ' + toArabicDigits(tm.min) + ' و' + toArabicDigits(tm.max) + ' ' + unitPlural + '. ';
         if (tm.bestMs) {
           out += 'أي حول ' + fmtDate(tm.bestMs) + ' (وأبعده نحو ' + fmtDate(tm.maxMs) + '). ';
@@ -217,6 +218,25 @@
     }
   }
 
+  /* حكمة الصياغة: الزمن يُقرأ من الميزان وبيت السؤال معاً —
+     فإن كان بيت السؤال سريعاً والميزان بطيئاً فالسائل مستعد والعائق من خارجه */
+  const SPEED_RANK = { fast: 0, medium: 1, slow: 2 };
+
+  function timingIntro(houseFig, judge) {
+    const h = SPEED_RANK[FIGURE_GUIDANCE[houseFig.id].speed];
+    const j = SPEED_RANK[FIGURE_GUIDANCE[judge.id].speed];
+    if (h < j) {
+      return 'أرى أسبابك حاضرة وعدّتك مهيأة، لكن الخط يرى تأخيراً يأتيك من خارج استعدادك — ' +
+        'فلا يغرّك تمام العدة، وتثبّت مما حولك قبل الخروج. ';
+    }
+    if (h > j) {
+      return 'قد تظن أن أسبابك لم تكتمل بعد، لكن الحكم أسرع مما يبدو لك — فتهيأ من الآن. ';
+    }
+    if (h === 0 && j === 0) return 'الأمر عاجل من كل وجه. ';
+    if (h === 2 && j === 2) return 'التأني غالب على أمرك من كل وجه، فوطّن نفسك على الصبر. ';
+    return '';
+  }
+
   const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
   function toArabicDigits(n) {
     return String(n).replace(/[0-9]/g, (d) => AR_DIGITS[+d]);
@@ -233,5 +253,5 @@
     { text: 'ماذا أفعل؟',        intent: 'advice' },
   ];
 
-  return { normalize, detectIntent, answer, khatName, SUGGESTED };
+  return { normalize, detectIntent, answer, khatName, timingIntro, SUGGESTED };
 });
