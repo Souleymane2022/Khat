@@ -1,11 +1,12 @@
 /* عامل خدمة بسيط: يجعل التطبيق يعمل دون اتصال بالإنترنت */
-const CACHE = 'khat-v3';
+const CACHE = 'khat-v4';
 const ASSETS = [
   './',
   './index.html',
   './css/style.css',
   './js/data.js',
   './js/ramal.js',
+  './js/chat.js',
   './js/app.js',
   './icon.svg',
   './manifest.webmanifest',

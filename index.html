@@ -62,6 +62,21 @@
     <!-- شاشة النتيجة -->
     <section id="screen-result" class="screen">
       <div class="card verdict-card" id="verdict-card"></div>
+
+      <!-- محادثة الخط -->
+      <div class="card chat-card">
+        <h2 id="chat-title">💬 حادِث خطَّك</h2>
+        <p class="muted">اسأل بلغتك العادية ويجيبك خطُّك بكلام بسيط — كل جواب من حساب خطّك نفسه.</p>
+        <div id="chat-log"></div>
+        <div class="chat-chips" id="chat-chips"></div>
+        <form id="chat-form" class="chat-form">
+          <input type="text" id="chat-input" placeholder="اكتب سؤالك… مثل: متى يقع؟" autocomplete="off" />
+          <button type="submit" class="btn btn-primary chat-send">أرسل</button>
+        </form>
+      </div>
+
+      <details class="tech-details">
+      <summary>📜 التفاصيل الكاملة للقراءة (لمن أراد التعمق)</summary>
       <div class="card">
         <h2>تفصيل القراءة</h2>
         <ul class="detail-list" id="detail-list"></ul>
@@ -84,6 +99,7 @@
         <p class="muted">البيوت الستة عشر — اضغط على أي بيت لقراءة معناه. البيت المظلّل هو بيت سؤالك.</p>
         <div class="takht" id="takht"></div>
       </div>
+      </details>
       <div class="btn-row">
         <button class="btn btn-ghost" id="btn-share">↗ شارك النتيجة</button>
       </div>
@@ -151,6 +167,7 @@
 
   <script src="js/data.js"></script>
   <script src="js/ramal.js"></script>
+  <script src="js/chat.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -61,6 +61,8 @@
     lines: [],                    // [{parity, count}]
     takht: null,
     verdict: null,
+    chat: [],                     // [{who: 'user'|'khat', text}]
+    historyAt: null,              // مفتاح الخطة الحالية في السجل
   };
 
   /* ---------------- التنقل ---------------- */
@@ -329,8 +331,10 @@
 
   function saveToHistory(parities) {
     const list = store.get(HISTORY_KEY, []);
+    const at = Date.now();
     list.unshift({
-      at: Date.now(),
+      at,
+      name: RAMAL_CHAT.khatName(state.takht),
       question: $('#question').value.trim(),
       typeId: state.selectedType.id,
       lines: parities,
@@ -338,9 +342,22 @@
       title: state.verdict.level.title,
       icon: state.verdict.level.icon,
       favorability: state.verdict.favorability,
+      chat: [],
     });
     store.set(HISTORY_KEY, list.slice(0, 50));
+    state.historyAt = at;
+    state.chat = [];
     renderHistory();
+  }
+
+  function persistChat() {
+    if (!state.historyAt) return;
+    const list = store.get(HISTORY_KEY, []);
+    const entry = list.find((e) => e.at === state.historyAt);
+    if (entry) {
+      entry.chat = state.chat.slice(-40);
+      store.set(HISTORY_KEY, list);
+    }
   }
 
   function renderHistory() {
@@ -358,7 +375,7 @@
         day: 'numeric', month: 'long', hour: 'numeric', minute: 'numeric',
       });
       li.innerHTML =
-        '<div class="hi-top"><span>' + entry.icon + ' ' + entry.title + '</span>' +
+        '<div class="hi-top"><span>' + entry.icon + ' ' + (entry.name ? entry.name + ' — ' : '') + entry.title + '</span>' +
         '<span class="hi-fav">' + arNum(entry.favorability) + '٪</span></div>' +
         '<div class="hi-mid">' + qt.icon + ' ' + qt.label +
         (entry.question ? ' — «' + entry.question + '»' : '') + '</div>' +
@@ -368,12 +385,16 @@
     });
   }
 
-  function reopenEntry(entry) {
+  function reopenEntry(stale) {
+    /* نقرأ النسخة الحديثة من التخزين حتى تعود المحادثة المحفوظة كاملة */
+    const entry = store.get(HISTORY_KEY, []).find((e) => e.at === stale.at) || stale;
     state.selectedType = QUESTION_TYPES.find((t) => t.id === entry.typeId) || QUESTION_TYPES[0];
     $('#question').value = entry.question || '';
     state.lines = entry.lines.map((parity) => ({ parity, count: parity }));
     state.takht = RAMAL.buildTakht(entry.lines);
     state.verdict = RAMAL.verdict(state.takht, state.selectedType.house, state.selectedType.id);
+    state.chat = Array.isArray(entry.chat) ? entry.chat : [];
+    state.historyAt = entry.at;
     state.stage = 'result';
     renderResult();
     document.querySelectorAll('nav.tabs button').forEach((b) => b.classList.remove('active'));
@@ -486,7 +507,82 @@
     renderGuidance();
     renderProbabilities();
     renderTakht();
+    renderChat();
   }
+
+  /* ---------------- محادثة الخط ---------------- */
+  const chatLog = $('#chat-log');
+  const chatChips = $('#chat-chips');
+  const chatInput = $('#chat-input');
+
+  function chatContext() {
+    return { takht: state.takht, verdict: state.verdict, questionType: state.selectedType };
+  }
+
+  function renderChat() {
+    const name = RAMAL_CHAT.khatName(state.takht);
+    $('#chat-title').textContent = '💬 حادِث «' + name + '»';
+
+    if (state.chat.length === 0) {
+      state.chat.push({
+        who: 'khat',
+        text: 'أنا «' + name + '» — خُطِطتُ لأجل سؤالك عن ' + state.selectedType.label +
+          '. اسألني بلغتك عن أي شيء في أمرك، أو اختر سؤالاً من الأزرار.',
+      });
+      persistChat();
+    }
+
+    chatLog.innerHTML = '';
+    state.chat.forEach((m) => appendBubble(m.who, m.text, false));
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    chatChips.innerHTML = '';
+    RAMAL_CHAT.SUGGESTED.forEach((s) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.textContent = s.text;
+      b.addEventListener('click', () => sendChat(s.text));
+      chatChips.appendChild(b);
+    });
+  }
+
+  function appendBubble(who, text, scroll) {
+    const div = document.createElement('div');
+    div.className = 'bubble ' + (who === 'user' ? 'b-user' : 'b-khat');
+    div.textContent = text;
+    chatLog.appendChild(div);
+    if (scroll !== false) chatLog.scrollTop = chatLog.scrollHeight;
+  }
+
+  function sendChat(text) {
+    text = String(text || '').trim();
+    if (!text || !state.takht) return;
+    state.chat.push({ who: 'user', text });
+    appendBubble('user', text);
+
+    const typing = document.createElement('div');
+    typing.className = 'bubble b-khat typing';
+    typing.textContent = '…';
+    chatLog.appendChild(typing);
+    chatLog.scrollTop = chatLog.scrollHeight;
+
+    setTimeout(() => {
+      typing.remove();
+      const intent = RAMAL_CHAT.detectIntent(text);
+      const reply = RAMAL_CHAT.answer(intent, chatContext());
+      state.chat.push({ who: 'khat', text: reply });
+      appendBubble('khat', reply);
+      persistChat();
+      vibrate(10);
+    }, 450);
+  }
+
+  $('#chat-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    sendChat(chatInput.value);
+    chatInput.value = '';
+  });
 
   /* الدلائل الدقيقة: الجهة، المكان، الزمن، اليوم */
   function renderGuidance() {
@@ -640,6 +736,8 @@
     state.lines = [];
     state.takht = null;
     state.verdict = null;
+    state.chat = [];
+    state.historyAt = null;
     state.stage = 'question';
     $('#question').value = '';
     renderRecord();
