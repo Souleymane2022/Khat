@@ -12,7 +12,10 @@
     root.RAMAL = factory(root.RAMAL_DATA);
   }
 })(typeof self !== 'undefined' ? self : this, function (data) {
-  const { FIGURES, HOUSES, VERDICT_LEVELS, QUALITY_PHRASES, SPECIAL_READINGS, FIGURE_GUIDANCE, SPEED_TEXT } = data;
+  const {
+    FIGURES, HOUSES, VERDICT_LEVELS, QUALITY_PHRASES, SPECIAL_READINGS,
+    FIGURE_GUIDANCE, SPEED_TEXT, FIGURE_ZONE, ELEMENT_ENV, FIGURE_APPEARANCE, FIGURE_PERSON,
+  } = data;
 
   /* البحث عن الشكل من صفوفه */
   const BY_KEY = {};
@@ -154,5 +157,81 @@
     return { score, favorability, level, details, houseFig, factors, evidence, guidance };
   }
 
-  return { figureFromRows, addFigures, buildTakht, verdict, effectiveJudgeQuality };
+  /* ================= التدقيق: المكان والزمان والأوصاف =================
+     من قواعد التدقيق عند أهل الرمل:
+     - موضع الفرد (النقطة الواحدة) في الشكل يدل على ارتفاع الموضع:
+       في الرأس = عالٍ، في الصدر = بمستوى اليد، في البطن = في الجوف،
+       في الرِّجل = عند الأرض وما تحتها
+     - عدد نقاط الشكل يعطي العدد في الأزمنة
+     - طبع الشكل يعطي بيئة الموضع وجزء اليوم */
+
+  function levelFromRows(fig) {
+    const singles = fig.rows.map((r, i) => (r === 1 ? i : -1)).filter((i) => i >= 0);
+    if (singles.length === 0) {
+      return 'في الوسط بين أشياء كثيرة متشابهة — قلّب ما تكدّس فوق بعضه';
+    }
+    if (singles.length === 4) {
+      return 'على مسار مكشوف بمستوى اليد — في ممر أو على حافة يمر بها الناس';
+    }
+    switch (singles[0]) {
+      case 0: return 'في موضع عالٍ فوق مستوى الرأس — أعالي الرفوف وفوق الخزائن وما عُلّق';
+      case 1: return 'بمستوى الصدر واليد — في الأدراج الوسطى وعلى الطاولات وفي الجيوب';
+      case 2: return 'في جوف شيء بمستوى الوسط — داخل وعاء أو حقيبة أو طيّات شيء';
+      default: return 'في موضع منخفض عند الأرض — أسفل الأثاث، عند العتبات، أو تحت ما يفرش';
+    }
+  }
+
+  const DISTANCE_TEXT = {
+    fast:   'قريب جداً: في محيط خطواتك — المجلس الذي تكون فيه وما جاوره',
+    medium: 'على مسافة وسط: في محيط الدار كلها أو الجيران الملاصقين',
+    slow:   'بعيد أو مهجور: في أطراف المكان وما لا تطرقه إلا نادراً، أو خارج الحي',
+  };
+
+  function preciseLocation(takht, houseFig) {
+    const g = FIGURE_GUIDANCE[houseFig.id];
+    const z = FIGURE_ZONE[houseFig.id];
+    return {
+      direction: g.direction,
+      zone: z.zone,
+      zoneText: z.text,
+      level: levelFromRows(houseFig),
+      env: ELEMENT_ENV[houseFig.element],
+      distance: DISTANCE_TEXT[g.speed],
+    };
+  }
+
+  /* الزمن بالعدد: نقاط الميزان تعطي العدد، وطبعه يعطي الوحدة وجزء اليوم */
+  function preciseTiming(takht, nowMs) {
+    const judge = takht.judge;
+    const g = FIGURE_GUIDANCE[judge.id];
+    const points = judge.rows.reduce((s, r) => s + r, 0); // 4..8
+    let best, unitLabel, unitDays;
+    if (g.speed === 'fast')       { best = points - 2; unitLabel = 'يوم';   unitDays = 1; }
+    else if (g.speed === 'medium'){ best = points - 3; unitLabel = 'أسبوع'; unitDays = 7; }
+    else                          { best = points - 3; unitLabel = 'شهر';   unitDays = 30; }
+    best = Math.max(1, best);
+    const min = Math.max(1, best - 1);
+    const max = best + 1;
+    const partOfDay = (judge.element === 'نار' || judge.element === 'هواء')
+      ? 'في النهار' : 'في الليل أو أطراف النهار';
+    const out = { points, min, best, max, unitLabel, unitDays, day: g.day, partOfDay };
+    if (typeof nowMs === 'number') {
+      out.bestMs = nowMs + best * unitDays * 86400000;
+      out.minMs = nowMs + min * unitDays * 86400000;
+      out.maxMs = nowMs + max * unitDays * 86400000;
+    }
+    return out;
+  }
+
+  /* الوصف الكامل للشخص: هيئته من شكلٍ وسيرته من دلالته */
+  function precisePerson(fig) {
+    const a = FIGURE_APPEARANCE[fig.id];
+    return 'سنّه: ' + a.age + '؛ لونه: ' + a.skin + '؛ بنيته: ' + a.build +
+      '؛ وعلامته التي يُعرف بها: ' + a.mark + '. وفي سيرته: ' + FIGURE_PERSON[fig.id];
+  }
+
+  return {
+    figureFromRows, addFigures, buildTakht, verdict, effectiveJudgeQuality,
+    levelFromRows, preciseLocation, preciseTiming, precisePerson,
+  };
 });

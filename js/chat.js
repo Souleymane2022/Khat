@@ -5,13 +5,20 @@
 
 (function (root, factory) {
   if (typeof module !== 'undefined') {
-    const data = require('./data.js');
-    module.exports = factory(data);
+    module.exports = factory(require('./data.js'), require('./ramal.js'));
   } else {
-    root.RAMAL_CHAT = factory(root.RAMAL_DATA);
+    root.RAMAL_CHAT = factory(root.RAMAL_DATA, root.RAMAL);
   }
-})(typeof self !== 'undefined' ? self : this, function (data) {
+})(typeof self !== 'undefined' ? self : this, function (data, RAMAL) {
   const { SPEED_TEXT, FIGURE_GUIDANCE, FIGURE_PERSON, QUESTION_TYPES } = data;
+
+  function fmtDate(ms) {
+    try {
+      return new Date(ms).toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
+    } catch {
+      return '';
+    }
+  }
 
   /* تطبيع النص العربي: إزالة التشكيل وتوحيد الألف والياء والتاء */
   function normalize(text) {
@@ -22,6 +29,7 @@
       .replace(/ة/g, 'ه')
       .replace(/ؤ/g, 'و')
       .replace(/ئ/g, 'ي')
+      .replace(/[؟?!.,،؛:]/g, ' ')
       .replace(/\s+/g, ' ')
       .trim()
       .toLowerCase();
@@ -71,12 +79,16 @@
   function detectIntent(text) {
     const n = ' ' + normalize(text) + ' ';
     if (!n.trim()) return 'empty';
-    /* الأخص يغلب الأعم: نأخذ أطول عبارة مطابقة، وعند التساوي الأسبق في الترتيب */
+    /* المطابقة على حدود الكلمات حتى لا تلتبس «ألقاها» بكلمة مكانية مثلاً،
+       والأخص (الأطول) يغلب الأعم، وعند التساوي الأسبق في الترتيب */
     let best = null;
     let bestLen = 0;
+    const matchesWord = (w) =>
+      n.includes(' ' + w + ' ') || n.includes(' ال' + w + ' ') ||
+      n.includes(' بال' + w + ' ') || n.includes(' لل' + w + ' ');
     for (const intent of INTENTS) {
       for (const w of intent.words) {
-        if (w.length > bestLen && n.includes(w)) {
+        if (w.length > bestLen && matchesWord(w)) {
           best = intent.id;
           bestLen = w.length;
         }
@@ -133,24 +145,32 @@
       }
 
       case 'timing': {
-        let out = 'وقته ' + speed.label + ': ' +
-          (jg.speed === 'fast' ? 'الأمر عاجل يقع في أيام قليلة إن شاء الله'
-            : jg.speed === 'medium' ? 'الأمر يأخذ أسابيع — لا عجلة فيه ولا إبطاء'
-            : 'الأمر بطيء يحتاج شهوراً وطول نفس، فلا تستعجل') + '. ';
-        out += 'وأوفق أيامك للسعي فيه يوم ' + jg.day + '. ';
-        if (verdict.evidence.key === 'mixed') out += 'وقد يتقدم الوقت أو يتأخر لأن العلامات متعارضة.';
+        const tm = RAMAL.preciseTiming(takht, ctx.now);
+        const unitPlural = tm.unitLabel === 'يوم' ? 'أيام' : (tm.unitLabel === 'أسبوع' ? 'أسابيع' : 'أشهر');
+        let out = 'عدد نقاط شكلك الحاكم يعطي الزمن: قرابة ' + toArabicDigits(tm.best) + ' ' + unitPlural +
+          ' — ما بين ' + toArabicDigits(tm.min) + ' و' + toArabicDigits(tm.max) + ' ' + unitPlural + '. ';
+        if (tm.bestMs) {
+          out += 'أي حول ' + fmtDate(tm.bestMs) + ' (وأبعده نحو ' + fmtDate(tm.maxMs) + '). ';
+        }
+        out += 'وأوفق أيامه ' + tm.day + '، ' + tm.partOfDay + '. ';
+        if (verdict.evidence.key === 'mixed') out += 'وقد يتقدم أو يتأخر قليلاً لأن العلامات متعارضة.';
         return out;
       }
 
       case 'location': {
-        return 'اطلب حاجتك ناحية ' + hg.direction + '. ' +
-          'ومظنّتها: ' + hg.place + '. ' +
-          'ابدأ من أقرب موضع بهذه الصفة في بيتك أو حولك، ثم وسّع الدائرة.';
+        const loc = RAMAL.preciseLocation(takht, houseFig);
+        return 'أحدد لك الموضع من شكل خطك:\n' +
+          '• الجهة: ' + loc.direction + '.\n' +
+          '• داخل أم خارج: ' + loc.zoneText + '.\n' +
+          '• الارتفاع: ' + loc.level + '.\n' +
+          '• صفة الموضع: ' + loc.env + '.\n' +
+          '• المسافة: ' + loc.distance + '.\n' +
+          'اجمعها: ابدأ بما يطابق الصفات كلها معاً، فإن لم تجد فأسقط صفةً صفة من آخرها.';
       }
 
       case 'person': {
-        return 'الذي يدور عليه أمرك: ' + FIGURE_PERSON[houseFig.id] + ' ' +
-          'وإن أعياك، فانظر أيضاً في هذا: ' + FIGURE_PERSON[judge.id];
+        return 'أصف لك الشخص من شكل خطك: ' + RAMAL.precisePerson(houseFig) +
+          '\nوإن لم ينطبق هذا على أحد حولك، فانظر بصفة الحاكم: ' + RAMAL.precisePerson(judge);
       }
 
       case 'probability': {

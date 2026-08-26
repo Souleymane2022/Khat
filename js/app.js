@@ -516,7 +516,7 @@
   const chatInput = $('#chat-input');
 
   function chatContext() {
-    return { takht: state.takht, verdict: state.verdict, questionType: state.selectedType };
+    return { takht: state.takht, verdict: state.verdict, questionType: state.selectedType, now: Date.now() };
   }
 
   function renderChat() {
@@ -584,16 +584,21 @@
     chatInput.value = '';
   });
 
-  /* الدلائل الدقيقة: الجهة، المكان، الزمن، اليوم */
+  /* الدلائل الدقيقة: موضع محدد وزمن بالعدد والتاريخ */
   function renderGuidance() {
-    const g = state.verdict.guidance;
+    const loc = RAMAL.preciseLocation(state.takht, state.verdict.houseFig);
+    const tm = RAMAL.preciseTiming(state.takht, Date.now());
+    const unitPlural = tm.unitLabel === 'يوم' ? 'أيام' : (tm.unitLabel === 'أسبوع' ? 'أسابيع' : 'أشهر');
+    const fmt = (ms) => new Date(ms).toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
     const gl = $('#guidance-list');
     gl.innerHTML = '';
     [
-      ['🧭 الجهة', g.direction],
-      ['📍 المكان', g.place],
-      ['⏳ الزمن', g.timing],
-      ['📅 اليوم', g.day],
+      ['🧭 الجهة', loc.direction + ' — ' + loc.zoneText],
+      ['📍 الموضع', loc.level],
+      ['🏺 صفته', loc.env],
+      ['👣 المسافة', loc.distance],
+      ['⏳ الزمن', 'قرابة ' + arNum(tm.best) + ' ' + unitPlural + ' (بين ' + arNum(tm.min) + ' و' + arNum(tm.max) + ') — حول ' + fmt(tm.bestMs)],
+      ['📅 اليوم', 'أوفق الأيام ' + tm.day + '، ' + tm.partOfDay],
     ].forEach(([label, txt]) => {
       const li = document.createElement('li');
       const sp = document.createElement('span');
