@@ -1,5 +1,5 @@
 /* اختبارات محرك علم الرمل — تشغيل: node test/ramal.test.js */
-const { FIGURES, FIGURE_LIST, QUESTION_TYPES, SPECIAL_READINGS } = require('../js/data.js');
+const { FIGURES, FIGURE_LIST, QUESTION_TYPES, SPECIAL_READINGS, FIGURE_GUIDANCE, SPEED_TEXT } = require('../js/data.js');
 const RAMAL = require('../js/ramal.js');
 
 let passed = 0;
@@ -88,7 +88,32 @@ QUESTION_TYPES.forEach((qt) => {
   assert(v.details.special === expected, 'special reading matches for ' + qt.id);
 });
 
-/* 8) مدخلات فاسدة تُرفض */
+/* 8) الدلائل الدقيقة: لكل شكل جهة ومكان وسرعة صحيحة ويوم */
+const DIRECTIONS = new Set(['الشرق', 'الغرب', 'الشمال', 'الجنوب']);
+const DAYS = new Set(['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت']);
+FIGURE_LIST.forEach((id) => {
+  const g = FIGURE_GUIDANCE[id];
+  assert(g, 'guidance exists for ' + id);
+  assert(DIRECTIONS.has(g.direction), 'valid direction for ' + id);
+  assert(SPEED_TEXT[g.speed], 'valid speed for ' + id);
+  assert(DAYS.has(g.day), 'valid day for ' + id);
+  assert(typeof g.place === 'string' && g.place.length > 10, 'place text for ' + id);
+});
+
+/* 9) الحكم يعيد عناصر الميزان والدلائل، والمجموع يطابق الدرجة */
+{
+  const v = RAMAL.verdict(t, 7, 'marriage');
+  assert(Array.isArray(v.factors) && v.factors.length === 6, 'six factors');
+  const raw = v.factors.reduce((s, f) => s + f.contribution, 0);
+  const recomputed = Math.max(-100, Math.min(100, Math.round((raw / 19) * 100)));
+  assert(recomputed === v.score, 'factor contributions reproduce the score');
+  assert(v.evidence && v.evidence.text, 'evidence strength present');
+  assert(v.guidance && v.guidance.direction.includes('جهة') && v.guidance.day.includes('يوم'),
+    'guidance texts present');
+  assert(v.favorability + (100 - v.favorability) === 100, 'probabilities sum to 100');
+}
+
+/* 10) مدخلات فاسدة تُرفض */
 let threw = false;
 try { RAMAL.buildTakht([1, 2, 3]); } catch (e) { threw = true; }
 assert(threw, 'invalid input rejected');

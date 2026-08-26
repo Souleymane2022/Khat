@@ -347,6 +347,37 @@ const VERDICT_LEVELS = [
 ];
 
 /* =====================================================================
+   الدلائل الدقيقة لكل شكل: الجهة (من طبعه)، والمكان، وسرعة الوقوع،
+   واليوم الأوفق (يوم كوكبه)
+   الجهات من الطبائع: نار=الشرق، تراب=الجنوب، هواء=الغرب، ماء=الشمال
+   السرعة: سريع (أيام)، متوسط (أسابيع)، بطيء (شهور)
+   ===================================================================== */
+const FIGURE_GUIDANCE = {
+  tariq:         { direction: 'الشمال', place: 'الطرقات والمسالك وبين المنازل — ما كان في ممرٍّ أو على طريق', speed: 'fast',   day: 'الاثنين' },
+  jamaa:         { direction: 'الشمال', place: 'الأسواق ومجامع الناس والمجالس — حيث تكثر الأيدي والعيون', speed: 'slow',   day: 'الاثنين' },
+  lahyan:        { direction: 'الشرق',  place: 'المواضع العالية المضيئة: أعالي البيت والرفوف وما ارتفع', speed: 'fast',   day: 'الخميس' },
+  ankis:         { direction: 'الجنوب', place: 'المواضع المنخفضة المظلمة: أسفل الأشياء وما دُفن أو سقط في حفرة', speed: 'slow',   day: 'السبت' },
+  qabd_dakhil:   { direction: 'الغرب',  place: 'داخل الدار وفي الخزائن ومواضع الحفظ — قريب من اليد', speed: 'medium', day: 'الخميس' },
+  qabd_kharij:   { direction: 'الجنوب', place: 'خارج الدار وفي أيدي الغير — ما خرج من ملكك', speed: 'medium', day: 'الجمعة' },
+  bayad:         { direction: 'الشمال', place: 'المواضع الطاهرة الهادئة: المساجد ومواضع الكتب والبياض', speed: 'medium', day: 'الأربعاء' },
+  humra:         { direction: 'الغرب',  place: 'مواضع النار والحديد والدم: المطابخ والأفران وأيدي أهل البأس', speed: 'fast',   day: 'الثلاثاء' },
+  nusra_dakhila: { direction: 'الشرق',  place: 'بيوت السلطان والوجهاء والمواضع المكرمة من الدار', speed: 'slow',   day: 'الأحد' },
+  nusra_kharija: { direction: 'الشرق',  place: 'الأبواب والمداخل ومواضع الاستقبال — ظاهرٌ غير خفي', speed: 'fast',   day: 'الأحد' },
+  ataba_dakhila: { direction: 'الجنوب', place: 'عتبات الأبواب من الداخل وما يلي المدخل من الدار', speed: 'medium', day: 'الخميس' },
+  ataba_kharija: { direction: 'الشرق',  place: 'خارج العتبة وما جاوز الباب — في سفر أو عند الخروج', speed: 'fast',   day: 'السبت' },
+  naqi_khadd:    { direction: 'الغرب',  place: 'مواضع النساء والزينة: بين الثياب والطيب والمرايا', speed: 'medium', day: 'الجمعة' },
+  jawdala:       { direction: 'الشرق',  place: 'مواضع الشباب والسلاح والدواب — حيث الحركة والقوة', speed: 'fast',   day: 'الثلاثاء' },
+  ijtima:        { direction: 'الغرب',  place: 'حيث تُجمع الأشياء: المخازن والصناديق المشتركة وملتقى الطرق', speed: 'medium', day: 'الأربعاء' },
+  uqla:          { direction: 'الجنوب', place: 'المغلقات: الصناديق والأقفال والحُرُز — محبوسٌ محفوظ', speed: 'slow',   day: 'السبت' },
+};
+
+const SPEED_TEXT = {
+  fast:   { label: 'قريب', detail: 'أيام قليلة — الشكل من الأشكال السريعة المتحركة' },
+  medium: { label: 'متوسط', detail: 'أسابيع — الشكل معتدل السير لا عجلة فيه ولا إبطاء' },
+  slow:   { label: 'بعيد', detail: 'شهور — الشكل من الأشكال الثابتة البطيئة، ويحتاج طول نفس' },
+};
+
+/* =====================================================================
    أحكام خاصة: حكم الشكل إذا وقع ميزاناً بحسب نوع السؤال
    (من دلالات الأشكال في أبوابها كما في كتب الرمل — ما لم يُذكر
     يُرجع إلى الحكم العام للشكل)
@@ -489,7 +520,10 @@ const QUALITY_PHRASES = {
   '-2': 'نحسٌ كبير يدل على شرّ وعرقلة',
 };
 
-const RAMAL_DATA = { FIGURES, FIGURE_LIST, HOUSES, QUESTION_TYPES, VERDICT_LEVELS, QUALITY_PHRASES, SPECIAL_READINGS };
+const RAMAL_DATA = {
+  FIGURES, FIGURE_LIST, HOUSES, QUESTION_TYPES, VERDICT_LEVELS,
+  QUALITY_PHRASES, SPECIAL_READINGS, FIGURE_GUIDANCE, SPEED_TEXT,
+};
 if (typeof module !== 'undefined') {
   module.exports = RAMAL_DATA;
 } else {

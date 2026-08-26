@@ -12,7 +12,7 @@
     root.RAMAL = factory(root.RAMAL_DATA);
   }
 })(typeof self !== 'undefined' ? self : this, function (data) {
-  const { FIGURES, HOUSES, VERDICT_LEVELS, QUALITY_PHRASES, SPECIAL_READINGS } = data;
+  const { FIGURES, HOUSES, VERDICT_LEVELS, QUALITY_PHRASES, SPECIAL_READINGS, FIGURE_GUIDANCE, SPEED_TEXT } = data;
 
   /* البحث عن الشكل من صفوفه */
   const BY_KEY = {};
@@ -94,16 +94,30 @@
     const w1 = takht.witnesses[0];
     const w2 = takht.witnesses[1];
 
-    const raw =
-      3 * jq +
-      1.5 * (w1.quality + w2.quality) +
-      1 * takht.reconciler.quality +
-      2 * houseFig.quality +
-      0.5 * takht.mothers[0].quality;
+    /* عناصر الحكم بأوزانها — تُعرض للمستخدم حتى يتعلم من أين جاءت النسبة */
+    const factors = [
+      { label: 'الميزان (القاضي)',        fig: takht.judge,      weight: 3,   quality: jq },
+      { label: 'بيت السؤال',              fig: houseFig,         weight: 2,   quality: houseFig.quality },
+      { label: 'الشاهد الأيمن (أول الأمر)', fig: w1,              weight: 1.5, quality: w1.quality },
+      { label: 'الشاهد الأيسر (آخر الأمر)', fig: w2,              weight: 1.5, quality: w2.quality },
+      { label: 'العاقبة',                 fig: takht.reconciler, weight: 1,   quality: takht.reconciler.quality },
+      { label: 'الأم الأولى (حال السائل)', fig: takht.mothers[0], weight: 0.5, quality: takht.mothers[0].quality },
+    ].map((f) => ({ ...f, contribution: f.weight * f.quality }));
 
-    const MAX = 3 * 2 + 1.5 * 4 + 1 * 2 + 2 * 2 + 0.5 * 2; // = 19
+    const raw = factors.reduce((s, f) => s + f.contribution, 0);
+    const MAX = factors.reduce((s, f) => s + f.weight * 2, 0); // = 19
     let score = Math.round((raw / MAX) * 100);
     score = Math.max(-100, Math.min(100, score));
+
+    /* قوة الدليل: اتفاق الشواهد أو تعارضها */
+    const signs = factors.filter((f) => f.contribution !== 0).map((f) => Math.sign(f.contribution));
+    const pos = signs.filter((s) => s > 0).length;
+    const neg = signs.filter((s) => s < 0).length;
+    let evidence;
+    if (signs.length === 0) evidence = { key: 'neutral', text: 'الشواهد كلها ممتزجة ساكنة — لا يقطع الخط هنا بشيء' };
+    else if (pos === 0 || neg === 0) evidence = { key: 'strong', text: 'دليل متفق قوي — الشواهد كلها في اتجاه واحد' };
+    else if (Math.abs(pos - neg) >= 2) evidence = { key: 'leaning', text: 'دليل راجح — أكثر الشواهد في اتجاه الحكم مع معارضة يسيرة' };
+    else evidence = { key: 'mixed', text: 'دليل مضطرب — الشواهد متعارضة، فخذ الحكم على التقريب لا القطع' };
 
     const level = VERDICT_LEVELS.find((l) => score >= l.min) || VERDICT_LEVELS[VERDICT_LEVELS.length - 1];
 
@@ -126,7 +140,18 @@
     /* نسبة صلاح الأمر: من صفر إلى مئة */
     const favorability = Math.round((score + 100) / 2);
 
-    return { score, favorability, level, details, houseFig };
+    /* الدلائل الدقيقة: الجهة والمكان من شكل بيت السؤال (موضع المطلوب)،
+       والزمن واليوم من الميزان (زمن الحكم) */
+    const hg = FIGURE_GUIDANCE[houseFig.id];
+    const jg = FIGURE_GUIDANCE[takht.judge.id];
+    const guidance = {
+      direction: 'جهة المطلوب: ' + hg.direction + ' — من طبع «' + houseFig.name + '» (' + houseFig.element + ').',
+      place: 'مظنّة المكان: ' + hg.place + '.',
+      timing: 'زمن الوقوع: ' + SPEED_TEXT[jg.speed].label + ' — ' + SPEED_TEXT[jg.speed].detail + '.',
+      day: 'اليوم الأوفق للسعي: ' + jg.day + ' (يوم ' + takht.judge.planet + '، كوكب الميزان).',
+    };
+
+    return { score, favorability, level, details, houseFig, factors, evidence, guidance };
   }
 
   return { figureFromRows, addFigures, buildTakht, verdict, effectiveJudgeQuality };

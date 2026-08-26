@@ -483,7 +483,71 @@
     });
     $('#advice-box').textContent = '☞ ' + v.details.advice;
 
+    renderGuidance();
+    renderProbabilities();
     renderTakht();
+  }
+
+  /* الدلائل الدقيقة: الجهة، المكان، الزمن، اليوم */
+  function renderGuidance() {
+    const g = state.verdict.guidance;
+    const gl = $('#guidance-list');
+    gl.innerHTML = '';
+    [
+      ['🧭 الجهة', g.direction],
+      ['📍 المكان', g.place],
+      ['⏳ الزمن', g.timing],
+      ['📅 اليوم', g.day],
+    ].forEach(([label, txt]) => {
+      const li = document.createElement('li');
+      const sp = document.createElement('span');
+      sp.className = 'dlabel';
+      sp.textContent = label + ': ';
+      li.appendChild(sp);
+      li.appendChild(document.createTextNode(txt));
+      gl.appendChild(li);
+    });
+  }
+
+  /* ميزان الاحتمالات: احتمال التمام والتعثر وعناصر الحكم بأوزانها */
+  function renderProbabilities() {
+    const v = state.verdict;
+    const summary = $('#prob-summary');
+    summary.innerHTML = '';
+    [
+      ['احتمال تمام الأمر', v.favorability, 'pos'],
+      ['احتمال التعثر أو التأخر', 100 - v.favorability, 'neg'],
+    ].forEach(([label, pct, cls]) => {
+      const row = document.createElement('div');
+      row.className = 'prob-row';
+      row.innerHTML =
+        '<div class="prob-label"><span>' + label + '</span><b>' + arNum(pct) + '٪</b></div>' +
+        '<div class="prob-track"><div class="prob-bar ' + cls + '" style="width:' + pct + '%"></div></div>';
+      summary.appendChild(row);
+    });
+
+    const fwrap = $('#factors');
+    fwrap.innerHTML = '';
+    const maxContribution = 6; /* أكبر وزن (الميزان ٣) × أقوى جودة (٢) */
+    v.factors.forEach((f) => {
+      const row = document.createElement('div');
+      row.className = 'factor-row';
+      const pct = Math.round((Math.abs(f.contribution) / maxContribution) * 50);
+      const dir = f.contribution > 0 ? 'pos' : (f.contribution < 0 ? 'neg' : 'zero');
+      row.innerHTML =
+        '<div class="factor-label"><span>' + f.label + '</span>' +
+        '<span class="muted">«' + f.fig.name + '»</span></div>' +
+        '<div class="factor-track"><div class="factor-mid"></div>' +
+        (dir === 'zero'
+          ? '<div class="factor-dot"></div>'
+          : '<div class="factor-bar ' + dir + '" style="width:' + pct + '%"></div>') +
+        '</div>';
+      fwrap.appendChild(row);
+    });
+
+    const ev = $('#evidence-line');
+    ev.textContent = '☾ قوة الدليل: ' + v.evidence.text;
+    ev.className = 'evidence-line ev-' + v.evidence.key;
   }
 
   /* ---------------- تخت الرمل ---------------- */

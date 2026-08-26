@@ -280,6 +280,59 @@ textarea#question:focus { outline: 2px solid var(--sand-3); }
   text-align: right;
 }
 
+/* ---------- ميزان الاحتمالات ---------- */
+.prob-row { margin-bottom: 10px; }
+.prob-label { display: flex; justify-content: space-between; font-size: 1rem; margin-bottom: 3px; }
+.prob-label b { color: var(--accent-deep); }
+.prob-track {
+  height: 12px;
+  border-radius: 7px;
+  background: #efe4c8;
+  overflow: hidden;
+  direction: rtl;
+}
+.prob-bar { height: 100%; border-radius: 7px; transition: width 0.6s ease; }
+.prob-bar.pos { background: linear-gradient(to left, #3d8f54, #2e7d43); }
+.prob-bar.neg { background: linear-gradient(to left, #c65a44, #b3402e); }
+
+.factor-row { margin: 10px 0; }
+.factor-label { display: flex; justify-content: space-between; font-size: 0.95rem; margin-bottom: 3px; }
+.factor-track {
+  position: relative;
+  height: 10px;
+  background: #efe4c8;
+  border-radius: 6px;
+  direction: ltr;
+}
+.factor-mid {
+  position: absolute;
+  left: 50%; top: -2px; bottom: -2px;
+  width: 2px;
+  background: var(--ink-soft);
+  opacity: 0.5;
+}
+.factor-bar {
+  position: absolute;
+  top: 0; bottom: 0;
+  border-radius: 6px;
+  transition: width 0.6s ease;
+}
+.factor-bar.pos { left: 50%; background: #2e7d43; }
+.factor-bar.neg { right: 50%; background: #b3402e; }
+.factor-dot {
+  position: absolute;
+  left: calc(50% - 4px); top: 1px;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mixed);
+}
+
+.evidence-line { margin-top: 12px; font-size: 1rem; padding: 8px 12px; border-radius: 8px; }
+.ev-strong  { background: #e8f3e4; color: var(--good); }
+.ev-leaning { background: #f4efdb; color: #6b5e1f; }
+.ev-mixed   { background: #f8ecdc; color: #8a5a2e; }
+.ev-neutral { background: #efeae0; color: var(--ink-soft); }
+
 .history-item {
   display: block;
   width: 100%;
