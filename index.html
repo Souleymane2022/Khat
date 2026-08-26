@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#a0622d" />
+  <meta name="description" content="تطبيق الخط — علم الرمل التقليدي: اخط بإصبعك كما يخط الآباء في التراب، ويُحسب لك تخت الرمل بالقواعد التقليدية الصحيحة" />
+  <title>الخط — علم الرمل</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app">
+    <header class="top">
+      <div class="bsm">﷽</div>
+      <h1>الخَطّ — عِلم الرمل</h1>
+      <div class="subtitle">كما يخُطّ الآباء في التراب: ستة عشر سطراً، ثم يُقرأ التخت</div>
+    </header>
+
+    <!-- شاشة السؤال -->
+    <section id="screen-question" class="screen visible">
+      <div class="card">
+        <h2>ما حاجتك؟</h2>
+        <p class="muted">أضمر حاجتك في نفسك، واكتبها إن شئت (لا تُحفظ ولا تُرسل لأي مكان).</p>
+        <textarea id="question" placeholder="مثال: هل أسافر هذا الشهر لطلب الرزق؟"></textarea>
+        <h3 style="margin-top:14px">نوع السؤال</h3>
+        <p class="muted">يحدد نوع السؤال البيت الذي يُنظر فيه من التخت.</p>
+        <div class="qtypes" id="qtypes"></div>
+        <button class="btn btn-primary" id="btn-start">ابدأ الخَطّ</button>
+      </div>
+    </section>
+
+    <!-- شاشة الخط في الرمل -->
+    <section id="screen-draw" class="screen">
+      <div class="card">
+        <div class="progress-lines">
+          <h2>اخطُط في الرمل</h2>
+          <div class="count"><span id="line-count">٠</span> / ١٦</div>
+        </div>
+        <p class="muted">
+          اسحب إصبعك على الرمل من اليمين إلى اليسار سطراً من النقاط <b>دون أن تعدّها</b> — كما يفعل
+          أهل الخط — ثم ارفع إصبعك. كل أربعة أسطر تكوّن أمّاً من أمهات التخت.
+        </p>
+        <div id="sandwrap">
+          <canvas id="sand"></canvas>
+          <div id="sandhint">اسحب إصبعك هنا لتخط السطر الأول…</div>
+        </div>
+        <div class="mothers-record" id="mothers-record"></div>
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="btn-undo">↶ تراجع عن سطر</button>
+          <button class="btn btn-ghost" id="btn-auto">⚡ أكمل الخط تلقائياً</button>
+          <button class="btn btn-ghost" id="btn-reset-draw">🗑 مسح الكل</button>
+        </div>
+        <button class="btn btn-primary" id="btn-cast" disabled>اقرأ التخت</button>
+      </div>
+    </section>
+
+    <!-- شاشة النتيجة -->
+    <section id="screen-result" class="screen">
+      <div class="card verdict-card" id="verdict-card"></div>
+      <div class="card">
+        <h2>تفصيل القراءة</h2>
+        <ul class="detail-list" id="detail-list"></ul>
+        <div class="advice-box" id="advice-box"></div>
+      </div>
+      <div class="card">
+        <h2>تخت الرمل</h2>
+        <p class="muted">البيوت الستة عشر — اضغط على أي بيت لقراءة معناه. البيت المظلّل هو بيت سؤالك.</p>
+        <div class="takht" id="takht"></div>
+      </div>
+      <button class="btn btn-primary" id="btn-new">خَطّ جديد</button>
+    </section>
+
+    <!-- موسوعة الأشكال -->
+    <section id="screen-learn" class="screen">
+      <div class="card">
+        <h2>الأشكال الستة عشر</h2>
+        <p class="muted">أشكال علم الرمل كما وردت في كتب الخط (خط الزناتي): كل شكل أربعة صفوف من فرد ونقطتين، ولكل شكل طبيعته وكوكبه ودلالته.</p>
+      </div>
+      <div class="fig-grid" id="fig-grid"></div>
+    </section>
+
+    <!-- عن التطبيق -->
+    <section id="screen-about" class="screen">
+      <div class="card">
+        <h2>عن الخط وعلم الرمل</h2>
+        <p>
+          «الخط» أو «علم الرمل» تراثٌ قديم عرفته شعوب أفريقيا والعرب: يخط الخطّاط في التراب ستة عشر
+          سطراً من النقاط دون عدّ، ثم يزاوج النقاط، فما بقي فرداً كان نقطة وما كان زوجاً كان نقطتين،
+          فتتكوّن <b>الأمهات الأربع</b>، ومنها تُشتق <b>البنات</b> ثم <b>النتائج</b> ثم
+          <b>الشاهدان</b> ثم <b>الميزان</b> الذي به يُحكم للسائل أو عليه، ثم <b>العاقبة</b>.
+        </p>
+        <p style="margin-top:8px">
+          هذا التطبيق يحسب التخت بالقواعد التقليدية نفسها حساباً دقيقاً لا يخطئ، ويعرض دلالات
+          الأشكال كما وردت في كتب هذا العلم.
+        </p>
+        <p style="margin-top:8px" class="muted">
+          تنبيه: هذا التطبيق لحفظ التراث الثقافي والاطلاع عليه. الغيب لا يعلمه إلا الله، والقرار
+          الرشيد يكون بالمشورة والأخذ بالأسباب والاستخارة الشرعية.
+        </p>
+      </div>
+    </section>
+
+    <footer class="foot">الخط — علم الرمل · تراثٌ يُحفظ · وما تدري نفسٌ ماذا تكسب غداً</footer>
+  </div>
+
+  <!-- نافذة تفاصيل بيت -->
+  <div class="modal-back" id="modal-back">
+    <div class="modal" id="modal" role="dialog" aria-modal="true">
+      <button class="close-x" id="modal-close" aria-label="إغلاق">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <nav class="tabs">
+    <button data-tab="cast" class="active"><span class="ticon">〰️</span>الخَطّ</button>
+    <button data-tab="learn"><span class="ticon">📖</span>الأشكال</button>
+    <button data-tab="about"><span class="ticon">🕌</span>عن العلم</button>
+  </nav>
+
+  <script src="js/data.js"></script>
+  <script src="js/ramal.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

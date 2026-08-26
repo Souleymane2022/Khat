@@ -1,0 +1,367 @@
+/* ============ الخط — علم الرمل ============ */
+:root {
+  --sand-1: #e8d5ae;
+  --sand-2: #dcc391;
+  --sand-3: #c9a86a;
+  --ink: #3b2f1e;
+  --ink-soft: #6b5a3e;
+  --paper: #faf3e3;
+  --card: #fffaf0;
+  --accent: #a0622d;
+  --accent-deep: #7c4a1e;
+  --good: #2e7d43;
+  --bad: #b3402e;
+  --mixed: #8a7a2e;
+  --line: #d8c49a;
+  --radius: 14px;
+  --shadow: 0 2px 10px rgba(80, 60, 20, 0.15);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  font-family: 'Amiri', 'Scheherazade New', 'Noto Naskh Arabic', 'Traditional Arabic', serif;
+  background:
+    radial-gradient(1200px 500px at 50% -10%, #f6ead0 0%, transparent 60%),
+    var(--paper);
+  color: var(--ink);
+  direction: rtl;
+  min-height: 100vh;
+  line-height: 1.8;
+}
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 0 14px 90px;
+}
+
+/* ---------- الرأس ---------- */
+header.top {
+  text-align: center;
+  padding: 22px 8px 10px;
+}
+header.top h1 {
+  font-size: 2rem;
+  color: var(--accent-deep);
+  letter-spacing: 1px;
+}
+header.top .subtitle {
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+.bsm { color: var(--accent); font-size: 1.05rem; margin-bottom: 4px; }
+
+/* ---------- التنقل السفلي ---------- */
+nav.tabs {
+  position: fixed;
+  bottom: 0; right: 0; left: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--card);
+  border-top: 2px solid var(--line);
+  padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+  z-index: 50;
+}
+nav.tabs button {
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 10px;
+}
+nav.tabs button .ticon { display: block; font-size: 1.3rem; }
+nav.tabs button.active { color: var(--accent-deep); background: #f3e7cd; font-weight: bold; }
+
+/* ---------- الشاشات ---------- */
+.screen { display: none; animation: fadein 0.35s ease; }
+.screen.visible { display: block; }
+@keyframes fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px;
+  margin: 14px 0;
+}
+.card h2 { color: var(--accent-deep); font-size: 1.35rem; margin-bottom: 10px; }
+.card h3 { color: var(--accent-deep); font-size: 1.15rem; margin-bottom: 6px; }
+.muted { color: var(--ink-soft); font-size: 0.95rem; }
+
+/* ---------- شاشة السؤال ---------- */
+textarea#question {
+  width: 100%;
+  min-height: 84px;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #fffdf7;
+  font-family: inherit;
+  font-size: 1.1rem;
+  padding: 10px 12px;
+  color: var(--ink);
+  resize: vertical;
+}
+textarea#question:focus { outline: 2px solid var(--sand-3); }
+
+.qtypes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.qtype {
+  border: 1.5px solid var(--line);
+  background: #fffdf7;
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-family: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+}
+.qtype .qicon { display: block; font-size: 1.4rem; }
+.qtype.selected {
+  border-color: var(--accent);
+  background: #f6e3c8;
+  font-weight: bold;
+  box-shadow: 0 0 0 2px rgba(160, 98, 45, 0.25);
+}
+
+/* ---------- الأزرار ---------- */
+.btn {
+  display: inline-block;
+  font-family: inherit;
+  font-size: 1.15rem;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 26px;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-primary {
+  background: linear-gradient(160deg, var(--accent), var(--accent-deep));
+  color: #fff7e8;
+  box-shadow: var(--shadow);
+  width: 100%;
+  margin-top: 14px;
+}
+.btn-ghost {
+  background: #f3e7cd;
+  color: var(--accent-deep);
+  border: 1px solid var(--line);
+  font-size: 1rem;
+  padding: 9px 16px;
+}
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+.btn-row .btn { flex: 1; min-width: 110px; }
+
+/* ---------- شاشة الخط (الرمل) ---------- */
+.progress-lines {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.progress-lines .count { font-size: 1.2rem; color: var(--accent-deep); font-weight: bold; }
+
+#sandwrap {
+  position: relative;
+  border-radius: var(--radius);
+  overflow: hidden;
+  border: 2px solid var(--sand-3);
+  box-shadow: inset 0 0 30px rgba(120, 90, 40, 0.35), var(--shadow);
+  touch-action: none;
+}
+#sand { display: block; width: 100%; height: 210px; touch-action: none; cursor: crosshair; }
+#sandhint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(80, 55, 20, 0.55);
+  font-size: 1.05rem;
+  pointer-events: none;
+  text-align: center;
+  padding: 0 20px;
+}
+
+/* سجل الأسطر: أربع أمهات */
+.mothers-record {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.mother-slot {
+  background: #fffdf7;
+  border: 1.5px dashed var(--line);
+  border-radius: 10px;
+  padding: 8px 4px;
+  text-align: center;
+  min-height: 118px;
+}
+.mother-slot.done { border-style: solid; border-color: var(--accent); background: #fdf5e4; }
+.mother-slot .mlabel { font-size: 0.85rem; color: var(--ink-soft); margin-bottom: 4px; }
+.mother-slot .mname { font-size: 0.9rem; color: var(--accent-deep); font-weight: bold; margin-top: 4px; }
+.dotrow { display: flex; justify-content: center; gap: 7px; height: 15px; align-items: center; }
+.dotrow .dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.dotrow.pending .dot { background: #cbb894; }
+
+/* ---------- شكل رملي (بطاقة) ---------- */
+.figure-dots { display: inline-flex; flex-direction: column; gap: 5px; padding: 6px 2px; }
+.figure-dots .dotrow .dot { background: var(--accent-deep); }
+.figure-dots.big .dotrow .dot { width: 12px; height: 12px; }
+
+/* ---------- شاشة النتيجة ---------- */
+.verdict-card { text-align: center; }
+.verdict-icon { font-size: 2.6rem; }
+.verdict-title { font-size: 1.5rem; color: var(--accent-deep); margin: 6px 0; }
+.gauge {
+  height: 14px;
+  border-radius: 8px;
+  background: linear-gradient(to left, #b3402e, #d9b23a, #2e7d43);
+  position: relative;
+  margin: 14px 6px 4px;
+}
+.gauge .needle {
+  position: absolute;
+  top: -7px;
+  width: 4px; height: 28px;
+  background: var(--ink);
+  border-radius: 2px;
+  transform: translateX(50%);
+}
+.gauge-labels { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--ink-soft); padding: 0 4px; }
+
+.detail-list { list-style: none; }
+.detail-list li {
+  padding: 10px 6px;
+  border-bottom: 1px dashed var(--line);
+  font-size: 1.02rem;
+}
+.detail-list li:last-child { border-bottom: none; }
+.detail-list .dlabel { color: var(--accent); font-weight: bold; }
+
+.advice-box {
+  background: #f6e9cf;
+  border-right: 4px solid var(--accent);
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-top: 10px;
+  font-size: 1.05rem;
+}
+
+/* ---------- تخت الرمل ---------- */
+.takht {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  direction: rtl;
+}
+.thouse {
+  background: #fffdf7;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  text-align: center;
+  padding: 6px 2px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.thouse:hover, .thouse:focus-visible { border-color: var(--accent); box-shadow: var(--shadow); }
+.thouse .hnum { font-size: 0.72rem; color: var(--ink-soft); }
+.thouse .hname { font-size: 0.78rem; color: var(--accent-deep); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thouse .figure-dots { padding: 3px 0; gap: 3px; }
+.thouse .figure-dots .dotrow { height: 9px; gap: 4px; }
+.thouse .figure-dots .dotrow .dot { width: 6px; height: 6px; }
+.thouse.q-good { background: #eef7ea; border-color: #9dc59a; }
+.thouse.q-bad { background: #fdeeea; border-color: #dfa79b; }
+.thouse.q-mixed { background: #f9f5e4; }
+.thouse.highlight { outline: 3px solid var(--accent); }
+
+.span2 { grid-column: span 2; }
+.span4 { grid-column: span 4; }
+.span8 { grid-column: span 8; }
+
+/* ---------- موسوعة الأشكال ---------- */
+.fig-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.fig-card {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 12px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  align-items: start;
+}
+.fig-card .fmeta { font-size: 0.9rem; color: var(--ink-soft); }
+.badge {
+  display: inline-block;
+  font-size: 0.82rem;
+  border-radius: 20px;
+  padding: 1px 10px;
+  margin-inline-start: 6px;
+  vertical-align: middle;
+}
+.badge.b2 { background: #d9efd6; color: var(--good); }
+.badge.b1 { background: #e6f2e0; color: var(--good); }
+.badge.b0 { background: #f2edd4; color: var(--mixed); }
+.badge.b-1 { background: #f8e4dc; color: var(--bad); }
+.badge.b-2 { background: #f4d3ca; color: var(--bad); }
+
+/* ---------- نافذة تفاصيل البيت ---------- */
+.modal-back {
+  position: fixed; inset: 0;
+  background: rgba(50, 35, 10, 0.5);
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+}
+.modal-back.open { display: flex; }
+.modal {
+  background: var(--paper);
+  border-radius: 18px 18px 0 0;
+  padding: 20px 18px 30px;
+  width: 100%;
+  max-width: 760px;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideup 0.25s ease;
+}
+@keyframes slideup { from { transform: translateY(40px); opacity: 0.4; } to { transform: none; opacity: 1; } }
+.modal .close-x {
+  float: left;
+  background: none; border: none;
+  font-size: 1.5rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+footer.foot {
+  text-align: center;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+  padding: 20px 10px 10px;
+}
+
+@media (max-width: 480px) {
+  header.top h1 { font-size: 1.6rem; }
+  .thouse .hname { font-size: 0.66rem; }
+  #sand { height: 180px; }
+}

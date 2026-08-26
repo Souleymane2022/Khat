@@ -1,0 +1,14 @@
+{
+  "name": "الخط — علم الرمل",
+  "short_name": "الخط",
+  "description": "تطبيق الخط في الرمل بالقواعد التقليدية: الأمهات والبنات والشاهدان والميزان",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#faf3e3",
+  "theme_color": "#a0622d",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
