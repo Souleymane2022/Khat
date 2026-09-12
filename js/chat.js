@@ -99,7 +99,7 @@
 
   /* اسم الخطة: باسم الشكل الحاكم فيها */
   function khatName(takht) {
-    return 'خطّ ' + takht.judge.name.replace(/^ال/, 'ال');
+    return 'خطّ ' + takht.judge.name;
   }
 
   /* كلام بسيط عن مستوي الحكم — بلا مصطلحات */
@@ -146,10 +146,9 @@
 
       case 'timing': {
         const tm = RAMAL.preciseTiming(takht, ctx.now);
-        const unitPlural = tm.unitLabel === 'يوم' ? 'أيام' : (tm.unitLabel === 'أسبوع' ? 'أسابيع' : 'أشهر');
         let out = timingIntro(houseFig, judge);
-        out += 'عدد نقاط شكلك الحاكم يعطي الزمن: قرابة ' + toArabicDigits(tm.best) + ' ' + unitPlural +
-          ' — ما بين ' + toArabicDigits(tm.min) + ' و' + toArabicDigits(tm.max) + ' ' + unitPlural + '. ';
+        out += 'عدد نقاط شكلك الحاكم يعطي الزمن: قرابة ' + formatCount(tm.best, tm.unitLabel) +
+          ' — ما بين ' + formatCount(tm.min, tm.unitLabel) + ' و' + formatCount(tm.max, tm.unitLabel) + '. ';
         if (tm.bestMs) {
           out += 'أي حول ' + fmtDate(tm.bestMs) + ' (وأبعده نحو ' + fmtDate(tm.maxMs) + '). ';
         }
@@ -242,6 +241,21 @@
     return String(n).replace(/[0-9]/g, (d) => AR_DIGITS[+d]);
   }
 
+  /* صياغة العدد مع وحدته بنحو صحيح: مفرد (١)، مثنى (٢)، جمع (٣-١٠) */
+  const UNIT_FORMS = {
+    'يوم':   { one: 'يوم واحد',   two: 'يومين',   many: 'أيام' },
+    'أسبوع': { one: 'أسبوع واحد', two: 'أسبوعين', many: 'أسابيع' },
+    'شهر':   { one: 'شهر واحد',   two: 'شهرين',   many: 'أشهر' },
+  };
+
+  function formatCount(n, unitLabel) {
+    const f = UNIT_FORMS[unitLabel];
+    if (!f) return toArabicDigits(n) + ' ' + unitLabel;
+    if (n === 1) return f.one;
+    if (n === 2) return f.two;
+    return toArabicDigits(n) + ' ' + f.many;
+  }
+
   /* الأسئلة الجاهزة (تظهر أزراراً فوق حقل الكتابة) */
   const SUGGESTED = [
     { text: 'هل يتم أمري؟',      intent: 'verdict' },
@@ -253,5 +267,5 @@
     { text: 'ماذا أفعل؟',        intent: 'advice' },
   ];
 
-  return { normalize, detectIntent, answer, khatName, timingIntro, SUGGESTED };
+  return { normalize, detectIntent, answer, khatName, timingIntro, formatCount, toArabicDigits, fmtDate, SUGGESTED };
 });

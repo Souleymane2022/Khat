@@ -192,4 +192,25 @@ const ctx2 = { takht: t, verdict: v, questionType: qt, now: NOW };
   }
 }
 
+/* 9) نحو الأعداد: مفرد ومثنى وجمع */
+assert(CHAT.formatCount(1, 'يوم') === 'يوم واحد', 'singular day');
+assert(CHAT.formatCount(2, 'أسبوع') === 'أسبوعين', 'dual week');
+assert(CHAT.formatCount(2, 'شهر') === 'شهرين', 'dual month');
+assert(CHAT.formatCount(3, 'شهر') === '٣ أشهر', 'plural months');
+assert(CHAT.formatCount(5, 'يوم') === '٥ أيام', 'plural days');
+/* ولا يظهر أبداً «١ أيام» أو «٢ أسابيع» في أجوبة الزمن */
+for (let i = 0; i < 300; i++) {
+  const lines = Array.from({ length: 16 }, () => (Math.random() < 0.5 ? 1 : 2));
+  const tk = RAMAL.buildTakht(lines);
+  const vv = RAMAL.verdict(tk, 9, 'travel');
+  const a = CHAT.answer('timing', { takht: tk, verdict: vv, questionType: QUESTION_TYPES[3], now: NOW });
+  assert(!/[١٢] (أيام|أسابيع|أشهر)/.test(a), 'no ungrammatical count in: ' + a.slice(0, 60));
+}
+
+/* 10) كل زر سؤال جاهز يُفهم نصه بنفس نيته المعلنة (حارس ضد الانحراف) */
+CHAT.SUGGESTED.forEach((s) => {
+  assert(CHAT.detectIntent(s.text) === s.intent,
+    'chip «' + s.text + '» detects as its declared intent ' + s.intent);
+});
+
 console.log('OK — ' + passed + ' assertions passed');

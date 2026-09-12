@@ -24,6 +24,8 @@
   const $ = (sel) => document.querySelector(sel);
   const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
   const arNum = (n) => String(n).replace(/[0-9]/g, (d) => AR_DIGITS[+d]);
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function randomParity() {
     const buf = new Uint8Array(1);
@@ -184,7 +186,7 @@
       canvas.addEventListener('pointerdown', onDown);
       canvas.addEventListener('pointermove', onMove);
       canvas.addEventListener('pointerup', onUp);
-      canvas.addEventListener('pointercancel', onUp);
+      canvas.addEventListener('pointercancel', onCancel);
       sandReady = true;
     } else {
       paintSand();
@@ -193,7 +195,8 @@
   }
 
   function onDown(e) {
-    if (state.lines.length >= 16) return;
+    /* إصبع ثانٍ أثناء الخط لا يُفسد عدّ النقاط الجاري */
+    if (stroke || state.lines.length >= 16) return;
     canvas.setPointerCapture(e.pointerId);
     const p = pointerPos(e);
     stroke = { lastX: p.x, lastY: p.y, dashes: 1 };
@@ -224,6 +227,12 @@
     if (n < 3) { wipeSand(); return; } /* لمسة قصيرة لا تُحسب سطراً */
     addLine({ parity: n % 2 === 1 ? 1 : 2, count: n });
     setTimeout(wipeSand, 420);
+  }
+
+  /* مقاطعة النظام للّمسة (مكالمة، تمرير…) تُلغي السطر ولا تسجله ناقصاً */
+  function onCancel() {
+    stroke = null;
+    wipeSand();
   }
 
   function wipeSand() {
@@ -375,11 +384,11 @@
         day: 'numeric', month: 'long', hour: 'numeric', minute: 'numeric',
       });
       li.innerHTML =
-        '<div class="hi-top"><span>' + entry.icon + ' ' + (entry.name ? entry.name + ' — ' : '') + entry.title + '</span>' +
+        '<div class="hi-top"><span>' + esc(entry.icon) + ' ' + (entry.name ? esc(entry.name) + ' — ' : '') + esc(entry.title) + '</span>' +
         '<span class="hi-fav">' + arNum(entry.favorability) + '٪</span></div>' +
         '<div class="hi-mid">' + qt.icon + ' ' + qt.label +
-        (entry.question ? ' — «' + entry.question + '»' : '') + '</div>' +
-        '<div class="hi-sub muted">الميزان: ' + entry.judge + ' · ' + when + '</div>';
+        (entry.question ? ' — «' + esc(entry.question) + '»' : '') + '</div>' +
+        '<div class="hi-sub muted">الميزان: ' + esc(entry.judge) + ' · ' + when + '</div>';
       li.addEventListener('click', () => reopenEntry(entry));
       wrap.appendChild(li);
     });
@@ -461,7 +470,8 @@
     const needle = document.createElement('div');
     needle.className = 'needle';
     const pct = (v.score + 100) / 2; /* 0..100 */
-    needle.style.left = 'calc(' + pct + '% - 2px)';
+    /* المقياس LTR وتدرجه أحمر يميناً وأخضر يساراً، فالدرجة العالية تذهب يساراً */
+    needle.style.left = 'calc(' + (100 - pct) + '% - 2px)';
     gauge.appendChild(needle);
     const labels = document.createElement('div');
     labels.className = 'gauge-labels';
@@ -542,7 +552,8 @@
       b.type = 'button';
       b.className = 'chip';
       b.textContent = s.text;
-      b.addEventListener('click', () => sendChat(s.text));
+      /* الزر الجاهز يمرر نيته المعلنة مباشرة — لا يُعاد تصنيف نصه */
+      b.addEventListener('click', () => sendChat(s.text, s.intent));
       chatChips.appendChild(b);
     });
   }
@@ -555,7 +566,7 @@
     if (scroll !== false) chatLog.scrollTop = chatLog.scrollHeight;
   }
 
-  function sendChat(text) {
+  function sendChat(text, forcedIntent) {
     text = String(text || '').trim();
     if (!text || !state.takht) return;
     state.chat.push({ who: 'user', text });
@@ -569,7 +580,7 @@
 
     setTimeout(() => {
       typing.remove();
-      const intent = RAMAL_CHAT.detectIntent(text);
+      const intent = forcedIntent || RAMAL_CHAT.detectIntent(text);
       const reply = RAMAL_CHAT.answer(intent, chatContext());
       state.chat.push({ who: 'khat', text: reply });
       appendBubble('khat', reply);
@@ -588,8 +599,8 @@
   function renderGuidance() {
     const loc = RAMAL.preciseLocation(state.takht, state.verdict.houseFig);
     const tm = RAMAL.preciseTiming(state.takht, Date.now());
-    const unitPlural = tm.unitLabel === 'يوم' ? 'أيام' : (tm.unitLabel === 'أسبوع' ? 'أسابيع' : 'أشهر');
-    const fmt = (ms) => new Date(ms).toLocaleDateString('ar', { weekday: 'long', day: 'numeric', month: 'long' });
+    const fmt = RAMAL_CHAT.fmtDate;
+    const fc = RAMAL_CHAT.formatCount;
     const gl = $('#guidance-list');
     gl.innerHTML = '';
     [
@@ -597,7 +608,7 @@
       ['📍 الموضع', loc.level],
       ['🏺 صفته', loc.env],
       ['👣 المسافة', loc.distance],
-      ['⏳ الزمن', 'قرابة ' + arNum(tm.best) + ' ' + unitPlural + ' (بين ' + arNum(tm.min) + ' و' + arNum(tm.max) + ') — حول ' + fmt(tm.bestMs)],
+      ['⏳ الزمن', 'قرابة ' + fc(tm.best, tm.unitLabel) + ' (بين ' + fc(tm.min, tm.unitLabel) + ' و' + fc(tm.max, tm.unitLabel) + ') — حول ' + fmt(tm.bestMs)],
       ['📅 اليوم', 'أوفق الأيام ' + tm.day + '، ' + tm.partOfDay],
     ].forEach(([label, txt]) => {
       const li = document.createElement('li');
@@ -655,7 +666,7 @@
   function renderTakht() {
     const takhtEl = $('#takht');
     takhtEl.innerHTML = '';
-    const spans = { 13: 'span2', 14: 'span2', 15: 'span2', 16: 'span2' };
+    const spans = { 13: 'span4', 14: 'span4', 15: 'span4', 16: 'span4' };
     /* الصف الأول: البيوت ١-٨؛ الثاني: ٩-١٢؛ الثالث: الشاهدان؛ الرابع: الميزان والعاقبة */
     const order = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
     order.forEach((n) => {

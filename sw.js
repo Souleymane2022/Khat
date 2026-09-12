@@ -1,5 +1,5 @@
 /* عامل خدمة بسيط: يجعل التطبيق يعمل دون اتصال بالإنترنت */
-const CACHE = 'khat-v5';
+const CACHE = 'khat-v6';
 const ASSETS = [
   './',
   './index.html',
@@ -32,6 +32,6 @@ self.addEventListener('fetch', (e) => {
         caches.open(CACHE).then((c) => c.put(e.request, copy));
       }
       return res;
-    }).catch(() => hit))
+    }).catch(() => hit || Response.error()))
   );
 });
